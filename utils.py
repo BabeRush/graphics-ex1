@@ -61,17 +61,11 @@ class SeamImage:
             Use NumpyPy vectorized matrix multiplication for high performance.
             To prevent outlier values in the boundaries, we recommend to pad them with 0.5
         """
-        # Get image dimensions
-        h, w, c = np_img.shape
-
-        # Pad the image with 0.5 to prevent outlier values in the boundaries
-        np_img_padded = np.pad(np_img, [(1, 1), (1, 1), (0, 0)], mode='constant', constant_values=0.5)
-
-        # Convert to grayscale using matrix multiplication
-        gs_img = np.dot(np_img_padded, self.gs_weights)
-
-        # Reshape the grayscale image to (h, w, 1) and return it
-        return gs_img.reshape(h, w, 1)
+        padded_img = np.pad(np_img, [(1, 1), (1, 1), (0, 0)], mode='constant', constant_values=0.5)
+        gray_scaled_img = np.dot(padded_img, self.gs_weights)
+        h, w, c = gray_scaled_img.shape
+        gray_scaled_img.reshape(h, w, 1)
+        return gray_scaled_img.reshape(h, w, 1)
 
     def calc_gradient_magnitude(self):
         """ Calculate gradient magnitude of a grayscale image
