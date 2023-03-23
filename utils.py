@@ -64,8 +64,8 @@ class SeamImage:
         padded_img = np.pad(np_img, [(1, 1), (1, 1), (0, 0)], mode='constant', constant_values=0.5)
         gray_scaled_img = np.dot(padded_img, self.gs_weights)
         h, w, c = gray_scaled_img.shape
-        gray_scaled_img.reshape(h, w, 1)
-        return gray_scaled_img.reshape(h, w, 1)
+        gray_scaled_img.reshape(h, w)
+        return gray_scaled_img.reshape(h, w)
 
     def calc_gradient_magnitude(self):
         """ Calculate gradient magnitude of a grayscale image
@@ -76,7 +76,15 @@ class SeamImage:
         Guidelines & hints:
             In order to calculate a gradient of a pixel, only its neighborhood is required.
         """
-        raise NotImplementedError("TODO: Implement SeamImage.calc_gradient_magnitude")
+        grad_x = np.diff(self.gs, axis=1)
+        grad_x = np.column_stack([grad_x, grad_x[:, -1]])
+
+        grad_y = np.diff(self.gs, axis=0)
+        grad_y = np.vstack([grad_y, grad_y[-1, :]])
+
+        grad_mag = np.sqrt(grad_x ** 2 + grad_y ** 2)
+
+        return grad_mag
 
     def calc_M(self):
         pass
