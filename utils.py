@@ -48,11 +48,10 @@ class SeamImage:
         self.seam_balance = 0
 
         # This might serve you to keep tracking original pixel indices
-        self.idx_map_h, self.idx_map_v = np.meshgrid(range(self.w), range(self.h))
-        self.tracking_matrix = np.zeros((self.h, self.w, 2))
-        for i in range(self.tracking_matrix.shape[0]):
-            for j in range(self.tracking_matrix.shape[1]):
-                self.tracking_matrix[i, j] = [i, j]
+        # self.idx_map_h, self.idx_map_v = np.meshgrid(range(self.w), range(self.h))
+        self.column_tracking = {i: list(range(self.h)) for i in range(self.w)}
+        self.row_tracking = {i: list(range(self.w)) for i in range(self.h)}
+
 
     def rgb_to_grayscale(self, np_img):
         """ Converts a np RGB image into grayscale (using self.gs_weights).
@@ -237,7 +236,7 @@ class ColumnSeamImage(SeamImage):
             cost_row_matrix = self.calc_M(column=False)
             self.cumm_mask[original_idx] = False
             self.resized_rgb = np.delete(self.resized_rgb, seam_idx, axis=0)
-        self.seams_rgb[~self.cumm_mask] = [255, 0, 0]
+        self.seams_rgb[~self.cumm_mask] = [1, 0, 0]
 
     def seams_removal_vertical(self, num_remove):
         """ A wrapper for removing num_remove horizontal seams (just a recommendation)
@@ -255,7 +254,7 @@ class ColumnSeamImage(SeamImage):
             self.M = self.calc_M()
             self.cumm_mask[:, original_idx] = False
             self.resized_rgb = np.delete(self.resized_rgb, seam_idx, axis=1)
-        self.seams_rgb[~self.cumm_mask] = [255, 0, 0]
+        self.seams_rgb[~self.cumm_mask] = [1, 0, 0]
 
     def backtrack_seam(self):
         """ Backtracks a seam for Column Seam Carving method
@@ -302,14 +301,13 @@ class VerticalSeamImage(SeamImage):
             cost_matrix[0] = gs_img[0]
             energy_matrix = self.E.copy().T
         for i in range(1, gs_img.shape[0]):
-            for j in range(gs_img.shape[1]):
-                c_v = np.abs(np.roll(gs_img[i], -1)[j] - np.roll(gs_img[i], 1)[j])
-                c_r = c_v + np.abs(np.roll(gs_img[i - 1], -1)[j] - np.roll(gs_img[i], -1)[j])
-                c_l = c_v + np.abs(np.roll(gs_img[i - 1], 1)[j] - np.roll(gs_img[i], 1)[j])
-                m_r = np.roll(cost_matrix[i - 1], -1)[j]
-                m_l = np.roll(cost_matrix[i - 1], 1)[j]
-                m_v = cost_matrix[i - 1, j]
-                cost_matrix[i][j] = np.min([m_r + c_r, m_l + c_l, m_v + c_v])
+            c_v = np.abs(np.roll(gs_img[i], -1, axis=0) - np.roll(gs_img[i], 1, axis=0))
+            c_r = c_v + np.abs(np.roll(gs_img[i - 1], -1, axis=0) - np.roll(gs_img[i], -1, axis=0))
+            c_l = c_v + np.abs(np.roll(gs_img[i - 1], 1, axis=0) - np.roll(gs_img[i], 1, axis=0))
+            m_r = np.roll(cost_matrix[i - 1], -1, axis=0)
+            m_l = np.roll(cost_matrix[i - 1], 1, axis=0)
+            m_v = cost_matrix[i - 1]
+            cost_matrix[i] = np.min([m_r + c_r, m_l + c_l, m_v + c_v], axis=0)
         if column:
             return energy_matrix + cost_matrix
         else:
@@ -359,8 +357,7 @@ class VerticalSeamImage(SeamImage):
         Parameters:
             num_remove (int): umber of vertical seam to be removed
         """
-
-        raise NotImplementedError("TODO: Implement SeamImage.seams_removal_vertical")
+        pass
 
     def backtrack_seam(self):
         """ Backtracks a seam for Seam Carving as taught in lecture
